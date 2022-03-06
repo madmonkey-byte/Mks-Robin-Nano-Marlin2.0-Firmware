@@ -31,13 +31,12 @@ def encrypt_file(input, output_file, file_length):
 def encrypt(source, target, env):
     print("Encrypting to:", board.get("build.firmware"))
     firmware = open(target[0].path, "rb")
-    renamed = open(target[0].dir.path + "/" + board.get("build.firmware"), "wb")
-    length = os.path.getsize(target[0].path)
+    with open(f'{target[0].dir.path}/' + board.get("build.firmware"), "wb") as renamed:
+        length = os.path.getsize(target[0].path)
 
-    encrypt_file(firmware, renamed, length)
+        encrypt_file(firmware, renamed, length)
 
-    firmware.close()
-    renamed.close()
+        firmware.close()
 
 if 'firmware' in board.get("build").keys():
   marlin.add_post_action(encrypt);

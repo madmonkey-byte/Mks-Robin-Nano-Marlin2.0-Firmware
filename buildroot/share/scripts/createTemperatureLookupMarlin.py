@@ -60,8 +60,7 @@ class Thermistor:
 
     def resol(self, adc):
         "Convert ADC reading into a resolution"
-        res = self.temp(adc)-self.temp(adc+1)
-        return res
+        return self.temp(adc)-self.temp(adc+1)
 
     def voltage(self, adc):
         "Convert ADC reading into a Voltage"
@@ -69,8 +68,7 @@ class Thermistor:
 
     def resist(self, adc):
         "Convert ADC reading into a resistance in Ohms"
-        r = self.rp * self.voltage(adc) / (VCC - self.voltage(adc)) # resistance of thermistor
-        return r
+        return self.rp * self.voltage(adc) / (VCC - self.voltage(adc))
 
     def temp(self, adc):
         "Convert ADC reading into a temperature in Celcius"
@@ -93,13 +91,12 @@ def main(argv):
     r2 = 1641.9                             # resistance at middle temperature (1.6 KOhm)
     t3 = 250                                # high temperature in Kelvin (250 degC)
     r3 = 226.15                             # resistance at high temperature (226.15 Ohm)
-    rp = 4700;                              # pull-up resistor (4.7 kOhm)
-    num_temps = 36;                         # number of entries for look-up table
-
+    rp = 4700
+    num_temps = 36
     try:
         opts, args = getopt.getopt(argv, "h", ["help", "rp=", "t1=", "t2=", "t3=", "num-temps="])
     except getopt.GetoptError as err:
-        print(str(err))
+        print(err)
         usage()
         sys.exit(2)
 

@@ -8,8 +8,10 @@ PIO_VERSION_MIN = (5, 0, 3)
 try:
 	from platformio import VERSION as PIO_VERSION
 	weights = (1000, 100, 1)
-	version_min = sum([x[0] * float(re.sub(r'[^0-9]', '.', str(x[1]))) for x in zip(weights, PIO_VERSION_MIN)])
-	version_cur = sum([x[0] * float(re.sub(r'[^0-9]', '.', str(x[1]))) for x in zip(weights, PIO_VERSION)])
+	version_min = sum(x[0] * float(re.sub(r'[^0-9]', '.', str(x[1])))
+	                  for x in zip(weights, PIO_VERSION_MIN))
+	version_cur = sum(x[0] * float(re.sub(r'[^0-9]', '.', str(x[1])))
+	                  for x in zip(weights, PIO_VERSION))
 	if version_cur < version_min:
 		print()
 		print("**************************************************")
@@ -69,7 +71,7 @@ def add_to_feat_cnf(feature, flines):
 		else:
 			for dep in re.split(r",\s*", line):
 				lib_name = re.sub(r'@([~^]|[<>]=?)?[\d.]+', '', dep.strip()).split('=').pop(0)
-				lib_re = re.compile('(?!^' + lib_name + '\\b)')
+				lib_re = re.compile(f'(?!^{lib_name}\\b)')
 				feat['lib_deps'] = list(filter(lib_re.match, feat['lib_deps'])) + [dep]
 				blab("[%s] lib_deps = %s" % (feature, dep), 3)
 
@@ -78,7 +80,7 @@ def load_config():
 	items = ProjectConfig().items('features')
 	for key in items:
 		feature = key[0].upper()
-		if not feature in FEATURE_CONFIG:
+		if feature not in FEATURE_CONFIG:
 			FEATURE_CONFIG[feature] = { 'lib_deps': [] }
 		add_to_feat_cnf(feature, key[1])
 
@@ -87,8 +89,7 @@ def load_config():
 	all_opts = env.GetProjectOptions()
 	for n in all_opts:
 		key = n[0]
-		mat = re.match(r'custom_marlin\.(.+)', key)
-		if mat:
+		if mat := re.match(r'custom_marlin\.(.+)', key):
 			try:
 				val = env.GetProjectOption(key)
 			except:
@@ -102,18 +103,14 @@ def get_all_known_libs():
 	known_libs = []
 	for feature in FEATURE_CONFIG:
 		feat = FEATURE_CONFIG[feature]
-		if not 'lib_deps' in feat:
+		if 'lib_deps' not in feat:
 			continue
-		for dep in feat['lib_deps']:
-			known_libs.append(PackageSpec(dep).name)
+		known_libs.extend(PackageSpec(dep).name for dep in feat['lib_deps'])
 	return known_libs
 
 def get_all_env_libs():
-	env_libs = []
 	lib_deps = env.GetProjectOption('lib_deps')
-	for dep in lib_deps:
-		env_libs.append(PackageSpec(dep).name)
-	return env_libs
+	return [PackageSpec(dep).name for dep in lib_deps]
 
 def set_env_field(field, value):
 	proj = env.GetProjectConfig()
@@ -162,7 +159,7 @@ def apply_features_config():
 					del deps_to_add[name]
 
 			# Is there anything left?
-			if len(deps_to_add) > 0:
+			if deps_to_add:
 				# Only add the missing dependencies
 				set_env_field('lib_deps', deps + list(deps_to_add.values()))
 
@@ -184,7 +181,7 @@ def apply_features_config():
 			cur_srcs = re.findall(r'[+-](<.*?>)', src_filter)
 			for d in my_srcs:
 				if d in cur_srcs:
-					src_filter = re.sub(r'[+-]' + d, '', src_filter)
+					src_filter = re.sub(f'[+-]{d}', '', src_filter)
 
 			src_filter = feat['src_filter'] + ' ' + src_filter
 			set_env_field('src_filter', [src_filter])
@@ -262,11 +259,7 @@ def load_marlin_features():
 	#if 'BOARD' in env:
 	#	cmd += [env.BoardConfig().get("build.extra_flags")]
 	for s in build_flags['CPPDEFINES']:
-		if isinstance(s, tuple):
-			cmd += ['-D' + s[0] + '=' + str(s[1])]
-		else:
-			cmd += ['-D' + s]
-
+		cmd += [f'-D{s[0]}={str(s[1])}'] if isinstance(s, tuple) else [f'-D{s}']
 	cmd += ['-D__MARLIN_DEPS__ -w -dM -E -x c++ buildroot/share/PlatformIO/scripts/common-dependencies.h']
 	cmd = ' '.join(cmd)
 	blab(cmd, 4)
@@ -283,7 +276,7 @@ def load_marlin_features():
 #
 def MarlinFeatureIsEnabled(env, feature):
 	load_marlin_features()
-	r = re.compile('^' + feature + '$')
+	r = re.compile(f'^{feature}$')
 	found = list(filter(r.match, env['MARLIN_FEATURES']))
 
 	# Defines could still be 'false' or '0', so check
